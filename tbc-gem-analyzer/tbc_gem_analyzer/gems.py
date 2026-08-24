@@ -72,14 +72,18 @@ def useful_value(gem_stats, ep: dict) -> float:
 
 
 def select_candidate_gems(db: Database, max_phase: int, allow_jc: bool,
-                          min_quality: int = 3, include_stamina: bool = True):
+                          min_quality: int = 3, include_stamina: bool = True,
+                          honor_gems: bool = True, dungeon_gems: bool = False):
     """Pick the gem candidate pool for a DPS rogue.
 
-    Returns (candidates, jc_candidates). Dominated gems (same color, all
-    useful stats <= another gem's) are dropped.
+    Returns (candidates, special_pool) where special_pool holds unique-equipped
+    gems (JC uniques, honor-vendor uniques, and - with dungeon_gems - heroic
+    dungeon unique drops); each may be used at most once, and at most one of
+    them may be a JC gem. Dominated gems are dropped.
     """
+    from .dbutil import HONOR_UNIQUE_GEM_IDS
     useful = set(ROGUE_USEFUL_STATS) | ({STAT_STAMINA} if include_stamina else set())
-    pool, jc_pool = [], []
+    pool, special = [], []
     for g in db.gems.values():
         if g.is_meta or g.phase > max_phase:
             continue
@@ -91,15 +95,20 @@ def select_candidate_gems(db: Database, max_phase: int, allow_jc: bool,
             continue
         if g.is_jc_gem:
             if allow_jc:
-                jc_pool.append(g)
+                special.append(g)
             continue
         if g.unique:
-            continue  # keep the combinatorics simple: skip other unique gems
+            if g.id in HONOR_UNIQUE_GEM_IDS:
+                if honor_gems:
+                    special.append(g)
+            elif dungeon_gems:
+                special.append(g)
+            continue
         if g.quality < min_quality:
             continue
         pool.append(g)
 
-    def dominated(a: Gem, pool_):
+    def dominated(a: Gem, pool_, allow_same_id_dup=True):
         for b in pool_:
             if b.id == a.id or b.color != a.color:
                 continue
@@ -110,8 +119,16 @@ def select_candidate_gems(db: Database, max_phase: int, allow_jc: bool,
         return False
 
     pool = [g for g in pool if not dominated(g, pool)]
-    jc_pool = [g for g in jc_pool if not dominated(g, jc_pool)]
-    return pool, jc_pool
+    # A unique gem is only worth using if it beats the best repeatable gem of
+    # its color, and duplicate-id vendor listings collapse to one entry.
+    seen_names = set()
+    filtered = []
+    for g in sorted(special, key=lambda g: -useful_value(g.stats, {i: 1 for i in useful})):
+        if g.name in seen_names or dominated(g, pool):
+            continue
+        seen_names.add(g.name)
+        filtered.append(g)
+    return pool, filtered
 
 
 @dataclass
@@ -124,6 +141,7 @@ class ItemOption:
     counts: tuple          # (red, yellow, blue) counting toward meta condition
     jc: int                # number of unique JC gems used (0/1)
     bonus_active: bool
+    uniques: tuple = ()    # ids of unique-equipped gems used (sorted)
 
 
 @dataclass
@@ -146,10 +164,12 @@ def _cap_counts(counts, caps):
     return tuple(min(c, m) for c, m in zip(counts, caps))
 
 
-def build_item_options(item: Item, slot: int, candidates, jc_candidates,
+def build_item_options(item: Item, slot: int, candidates, special_pool,
                        ep: dict, meta_socket_ok: bool):
     """Enumerate Pareto-optimal gemmings for one item's colored sockets.
 
+    special_pool holds unique-equipped gems (JC + honor/dungeon uniques); a
+    unique gem can appear at most once in the item, and at most one JC gem.
     meta_socket_ok: whether a meta gem is socketed in this item's meta socket
     (only relevant for the item that has one; the socket bonus requires every
     socket, including the meta socket, to be matched).
@@ -158,9 +178,7 @@ def build_item_options(item: Item, slot: int, candidates, jc_candidates,
     if not colored:
         return []
     needs_meta = item.meta_socket_index is not None
-    pools = []
-    for _ in colored:
-        pools.append(candidates + jc_candidates)
+    pools = [candidates + special_pool for _ in colored]
 
     bonus_ep = useful_value(item.socket_bonus, ep)
     bonus_hit = 0
@@ -169,6 +187,9 @@ def build_item_options(item: Item, slot: int, candidates, jc_candidates,
 
     best = {}
     for combo in itertools.product(*pools):
+        uniques = [g.id for g in combo if g.unique or g.is_jc_gem]
+        if len(uniques) != len(set(uniques)):
+            continue  # same unique-equipped gem twice
         jc = sum(1 for g in combo if g.is_jc_gem)
         if jc > 1:
             continue
@@ -180,20 +201,23 @@ def build_item_options(item: Item, slot: int, candidates, jc_candidates,
         opt_ep = gem_ep + (bonus_ep if bonus_active else 0.0)
         opt_hit = gem_hit + (bonus_hit if bonus_active else 0)
         counts = tuple(sum(x) for x in zip(*(g.counts_as() for g in combo)))
-        key = (opt_hit, counts, jc)
+        uniq_key = tuple(sorted(uniques))
+        key = (opt_hit, counts, jc, uniq_key)
         prev = best.get(key)
         if prev is None or opt_ep > prev.ep:
             best[key] = ItemOption(
                 item_slot=slot, gems=tuple(g.id for g in combo), ep=opt_ep,
-                hit=opt_hit, counts=counts, jc=jc, bonus_active=bonus_active)
+                hit=opt_hit, counts=counts, jc=jc, bonus_active=bonus_active,
+                uniques=uniq_key)
 
     # Pareto prune: drop options beaten on EP by another option with the same
-    # jc usage, same hit, and >= color counts.
+    # unique usage, same hit, and >= color counts.
     opts = list(best.values())
     pruned = []
     for a in opts:
         dominated = any(
-            b is not a and b.jc <= a.jc and b.hit == a.hit and b.ep >= a.ep
+            b is not a and b.uniques == a.uniques and b.hit == a.hit
+            and b.ep >= a.ep
             and all(bc >= ac for bc, ac in zip(b.counts, a.counts))
             and (b.ep > a.ep or any(bc > ac for bc, ac in zip(b.counts, a.counts)))
             for b in opts)
@@ -202,11 +226,13 @@ def build_item_options(item: Item, slot: int, candidates, jc_candidates,
     return pruned
 
 
-def optimize_combos(socketed, ep, meta_gem_id, candidates, jc_candidates,
+def optimize_combos(socketed, ep, meta_gem_id, candidates, special_pool,
                     meta_socket_gem_matches: bool):
     """DP over items: best-EP gemming for every achievable gem-hit-rating total.
 
-    socketed: list of (slot_index, Item). Returns list[GemCombo].
+    socketed: list of (slot_index, Item). special_pool holds unique-equipped
+    gems (each usable once across the whole character, at most one of them a
+    JC gem). Returns list[GemCombo].
     """
     cond = META_CONDITIONS.get(meta_gem_id) if meta_gem_id else None
     if cond and cond[0] == "cmp":
@@ -216,27 +242,34 @@ def optimize_combos(socketed, ep, meta_gem_id, candidates, jc_candidates,
     else:
         caps = (0, 0, 0)
 
+    # Keep the DP tractable: cap the unique pool to the highest-EP entries.
+    special_pool = sorted(special_pool, key=lambda g: -useful_value(g.stats, ep))[:6]
+    jc_ids = frozenset(g.id for g in special_pool if g.is_jc_gem)
+
     per_item_options = []
     for slot, item in socketed:
-        opts = build_item_options(item, slot, candidates, jc_candidates, ep,
+        opts = build_item_options(item, slot, candidates, special_pool, ep,
                                   meta_socket_gem_matches)
         # (meta_socket_gem_matches only matters for the item with a meta socket)
         if opts:
             per_item_options.append(opts)
 
-    # state: (capped_counts, jc_used, hit_total) -> (ep, [chosen ItemOption...])
-    states = {((0, 0, 0), 0, 0): (0.0, [])}
+    # state: (capped_counts, used_uniques, hit_total) -> (ep, [ItemOption...])
+    states = {((0, 0, 0), frozenset(), 0): (0.0, [])}
     for opts in per_item_options:
         new_states = {}
-        for (counts, jc, hit), (ep_sum, chosen) in states.items():
+        for (counts, used, hit), (ep_sum, chosen) in states.items():
             for o in opts:
-                njc = jc + o.jc
-                if njc > 1:
-                    continue
+                o_uniques = frozenset(o.uniques)
+                if o_uniques & used:
+                    continue  # unique-equipped gem already used elsewhere
+                nused = used | o_uniques
+                if len(nused & jc_ids) > 1:
+                    continue  # only one JC gem total
                 ncounts = _cap_counts(
                     tuple(c + oc for c, oc in zip(counts, o.counts)), caps) \
                     if caps else (0, 0, 0)
-                key = (ncounts, njc, hit + o.hit)
+                key = (ncounts, nused, hit + o.hit)
                 nep = ep_sum + o.ep
                 prev = new_states.get(key)
                 if prev is None or nep > prev[0]:
@@ -245,7 +278,7 @@ def optimize_combos(socketed, ep, meta_gem_id, candidates, jc_candidates,
 
     # Collect, per hit total, the best valid state (meta condition satisfied).
     best_per_hit = {}
-    for (counts, jc, hit), (ep_sum, chosen) in states.items():
+    for (counts, used, hit), (ep_sum, chosen) in states.items():
         if meta_gem_id and not meta_condition_met(meta_gem_id, *counts):
             continue
         prev = best_per_hit.get(hit)

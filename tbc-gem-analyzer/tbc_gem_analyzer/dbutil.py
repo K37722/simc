@@ -105,6 +105,20 @@ COLOR_COUNTS_AS = {
 
 PROFESSION_JEWELCRAFTING = 7
 
+# Unique-equipped gems purchasable from the honor (PvP) vendors.
+HONOR_UNIQUE_GEM_IDS = {
+    27777, 27812,          # Stark Blood Garnet (caster)
+    27785, 27820,          # Notched Deep Peridot (caster)
+    27786, 27809,          # Barbed Deep Peridot (3 Sta / 4 Crit, rare)
+    28118,                 # Runed Ornate Ruby (caster)
+    28119,                 # Smooth Ornate Dawnstone (10 Crit)
+    28120,                 # Gleaming Ornate Dawnstone (caster)
+    28123,                 # Potent Ornate Topaz (caster)
+    28360, 28361,          # Mighty Blood Garnet (14 AP, rare)
+    28362,                 # Bold Ornate Ruby (20 AP)
+    28363,                 # Inscribed Ornate Topaz (10 AP / 5 Crit)
+}
+
 # ItemType enum -> ItemSlot enum index (proto/common.proto)
 ITEM_TYPE_TO_SLOTS = {
     1: [0],        # Head

@@ -73,6 +73,12 @@ def parse_args():
                    help="number of finalist combos simmed on every boss (default %(default)s)")
     p.add_argument("--jc", choices=["on", "off"], default="on",
                    help="allow the unique epic Jewelcrafting gem (default on)")
+    p.add_argument("--no-honor-gems", action="store_true",
+                   help="exclude the unique-equipped honor vendor gems (Bold "
+                        "Ornate Ruby, Inscribed Ornate Topaz, ...)")
+    p.add_argument("--dungeon-gems", action="store_true",
+                   help="also consider unique-equipped heroic dungeon drop gems "
+                        "(Glinting/Pristine Fire Opal, Shifting Tanzanite, ...)")
     p.add_argument("--talents", default=None,
                    help="override talent string (your Murder/main build)")
     p.add_argument("--talents-alt", default=None,
@@ -189,19 +195,24 @@ def main():
               "(force with --jc on and no professions in export)")
         allow_jc = False
 
-    candidates, jc_candidates = select_candidate_gems(
+    candidates, special_pool = select_candidate_gems(
         db, max_phase=args.phase, allow_jc=allow_jc,
-        min_quality=3 if args.rare_gems else 4)
+        min_quality=3 if args.rare_gems else 4,
+        honor_gems=not args.no_honor_gems, dungeon_gems=args.dungeon_gems)
     if not args.rare_gems:
         # epic-quality cut can remove entire colors pre-phase-3; backfill rares
         have_colors = {g.color for g in candidates}
-        rare, _ = select_candidate_gems(db, args.phase, False, min_quality=3)
+        rare, _ = select_candidate_gems(db, args.phase, False, min_quality=3,
+                                        honor_gems=False)
         candidates += [g for g in rare if g.color not in have_colors]
-    print(f"\nCandidate gems ({len(candidates)} regular, {len(jc_candidates)} JC):")
-    for g in sorted(candidates + jc_candidates, key=lambda g: g.color):
-        from tbc_gem_analyzer.dbutil import COLOR_NAMES
-        print(f"  [{COLOR_NAMES.get(g.color, '?'):>6}] {g}" +
-              ("  (JC unique)" if g.is_jc_gem else ""))
+    print(f"\nCandidate gems ({len(candidates)} regular, "
+          f"{len(special_pool)} unique-equipped):")
+    for g in sorted(candidates + special_pool, key=lambda g: g.color):
+        from tbc_gem_analyzer.dbutil import COLOR_NAMES, HONOR_UNIQUE_GEM_IDS
+        tag = ("  (JC unique)" if g.is_jc_gem else
+               "  (honor vendor, unique)" if g.id in HONOR_UNIQUE_GEM_IDS else
+               "  (unique)" if g.unique else "")
+        print(f"  [{COLOR_NAMES.get(g.color, '?'):>6}] {g}{tag}")
 
     socketed = []
     for slot, spec in enumerate(gear.slots):
@@ -255,7 +266,7 @@ def main():
     # --- Stage 2: optimize combos per gem-hit-rating total ---
     print("\nStage 2: enumerating optimal combos per hit-rating bracket ...")
     combos = optimize_combos(socketed, ep, meta_gem.id if meta_gem else None,
-                             candidates, jc_candidates,
+                             candidates, special_pool,
                              meta_socket_gem_matches=meta_gem is not None)
     current = current_combo_from_gear(gear, db)
 
