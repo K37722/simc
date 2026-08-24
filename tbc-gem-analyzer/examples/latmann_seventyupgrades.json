@@ -1,0 +1,190 @@
+{
+    "name": "Currently Equipped",
+    "phase": 0,
+    "links": {
+        "set": "https://sixtyupgrades.com/tbc/armory/eu/spineshatter/latmann",
+        "talents": "https://sixtyupgrades.com/tbc/talents/rogue/1Bc3DFgILONRSUTWX0CEDGHIjj"
+    },
+    "character": {
+        "name": "Latmann",
+        "level": 70,
+        "gameClass": "ROGUE",
+        "race": "UNDEAD",
+        "faction": "HORDE"
+    },
+    "items": [
+        {
+            "name": "Deathmantle Helm",
+            "id": 30146,
+            "enchant": { "name": "Glyph of Ferocity", "id": 3003, "itemId": 29192 },
+            "gems": [
+                { "name": "Relentless Earthstorm Diamond", "id": 32409 },
+                { "name": "Glinting Noble Topaz", "id": 24061 }
+            ],
+            "slot": "HEAD"
+        },
+        {
+            "name": "Choker of Vile Intent",
+            "id": 29381,
+            "gems": [],
+            "slot": "NECK"
+        },
+        {
+            "name": "Deathmantle Shoulderpads",
+            "id": 30149,
+            "enchant": { "name": "Greater Inscription of Vengeance", "id": 2986, "itemId": 28888 },
+            "gems": [
+                { "name": "Glinting Noble Topaz", "id": 24061 },
+                { "name": "Shifting Nightseye", "id": 24055 }
+            ],
+            "slot": "SHOULDERS"
+        },
+        {
+            "name": "Bloodsea Brigand's Vest",
+            "id": 30101,
+            "enchant": { "name": "Enchant Chest - Exceptional Stats", "id": 2661, "spellId": 27960 },
+            "gems": [
+                { "name": "Rigid Dawnstone", "id": 24051 },
+                { "name": "Rigid Dawnstone", "id": 24051 },
+                { "name": "Shifting Nightseye", "id": 24055 }
+            ],
+            "slot": "CHEST"
+        },
+        {
+            "name": "Belt of Deep Shadow",
+            "id": 30040,
+            "gems": [
+                { "name": "Rigid Dawnstone", "id": 24051 },
+                { "name": "Rigid Dawnstone", "id": 24051 }
+            ],
+            "slot": "WAIST"
+        },
+        {
+            "name": "Deathmantle Legguards",
+            "id": 30148,
+            "enchant": { "name": "Nethercobra Leg Armor", "id": 3012, "itemId": 29535 },
+            "gems": [
+                { "name": "Rigid Dawnstone", "id": 24051 }
+            ],
+            "slot": "LEGS"
+        },
+        {
+            "name": "Edgewalker Longboots",
+            "id": 28545,
+            "enchant": { "name": "Enchant Boots - Cat's Swiftness", "id": 2939, "spellId": 34007 },
+            "gems": [
+                { "name": "Glinting Noble Topaz", "id": 24061 },
+                { "name": "Glinting Noble Topaz", "id": 24061 }
+            ],
+            "slot": "FEET"
+        },
+        {
+            "name": "Vambraces of Ending",
+            "id": 29966,
+            "enchant": { "name": "Enchant Bracer - Assault", "id": 1593, "spellId": 34002 },
+            "gems": [
+                { "name": "Rigid Dawnstone", "id": 24051 }
+            ],
+            "slot": "WRISTS"
+        },
+        {
+            "name": "Deathmantle Handguards",
+            "id": 30145,
+            "enchant": { "name": "Enchant Gloves - Superior Agility", "id": 2564, "spellId": 25080 },
+            "gems": [],
+            "slot": "HANDS"
+        },
+        {
+            "name": "Ring of Lethality",
+            "id": 30052,
+            "gems": [],
+            "slot": "FINGER_1"
+        },
+        {
+            "name": "Garona's Signet Ring",
+            "id": 28649,
+            "gems": [],
+            "slot": "FINGER_2"
+        },
+        {
+            "name": "Bloodlust Brooch",
+            "id": 29383,
+            "gems": [],
+            "slot": "TRINKET_1"
+        },
+        {
+            "name": "Warp-Spring Coil",
+            "id": 30450,
+            "gems": [],
+            "slot": "TRINKET_2"
+        },
+        {
+            "name": "Vengeance Wrap",
+            "id": 24259,
+            "enchant": { "name": "Enchant Cloak - Greater Agility", "id": 368, "spellId": 34004 },
+            "gems": [
+                { "name": "Crimson Sun", "id": 33131 }
+            ],
+            "slot": "BACK"
+        },
+        {
+            "name": "Talon of Azshara",
+            "id": 30082,
+            "enchant": { "name": "Enchant Weapon - Mongoose", "id": 2673, "spellId": 27984 },
+            "gems": [],
+            "slot": "MAIN_HAND"
+        },
+        {
+            "name": "Merciless Gladiator's Quickblade",
+            "id": 32027,
+            "enchant": { "name": "Enchant Weapon - Mongoose", "id": 2673, "spellId": 27984 },
+            "gems": [],
+            "slot": "OFF_HAND"
+        },
+        {
+            "name": "Arcanite Steam-Pistol",
+            "id": 29949,
+            "gems": [],
+            "slot": "RANGED"
+        },
+        {
+            "name": "Green Trophy Tabard of the Illidari",
+            "id": 31404,
+            "gems": [],
+            "slot": "TABARD"
+        }
+    ],
+    "consumables": [],
+    "buffs": [],
+    "talents": [
+        { "name": "Precision", "id": 181, "rank": 5, "spellId": 13845 },
+        { "name": "Lightning Reflexes", "id": 186, "rank": 3, "spellId": 13789 },
+        { "name": "Improved Sinister Strike", "id": 201, "rank": 2, "spellId": 13863 },
+        { "name": "Endurance", "id": 204, "rank": 1, "spellId": 13742 },
+        { "name": "Adrenaline Rush", "id": 205, "rank": 1, "spellId": 13750 },
+        { "name": "Dual Wield Specialization", "id": 221, "rank": 5, "spellId": 13852 },
+        { "name": "Improved Sprint", "id": 222, "rank": 2, "spellId": 13875 },
+        { "name": "Blade Flurry", "id": 223, "rank": 1, "spellId": 13877 },
+        { "name": "Sword Specialization", "id": 242, "rank": 5, "spellId": 13964 },
+        { "name": "Lethality", "id": 269, "rank": 5, "spellId": 14137 },
+        { "name": "Malice", "id": 270, "rank": 5, "spellId": 14142 },
+        { "name": "Ruthlessness", "id": 273, "rank": 3, "spellId": 14161 },
+        { "name": "Murder", "id": 274, "rank": 2, "spellId": 14159 },
+        { "name": "Improved Expose Armor", "id": 278, "rank": 2, "spellId": 14169 },
+        { "name": "Relentless Strikes", "id": 281, "rank": 1, "spellId": 14179 },
+        { "name": "Vile Poisons", "id": 682, "rank": 2, "spellId": 16514 },
+        { "name": "Aggression", "id": 1122, "rank": 3, "spellId": 18429 },
+        { "name": "Weapon Expertise", "id": 1703, "rank": 2, "spellId": 30920 },
+        { "name": "Vitality", "id": 1705, "rank": 2, "spellId": 31123 },
+        { "name": "Surprise Attacks", "id": 1709, "rank": 1, "spellId": 32601 },
+        { "name": "Combat Potency", "id": 1825, "rank": 5, "spellId": 35553 },
+        { "name": "Improved Slice and Dice", "id": 1827, "rank": 3, "spellId": 14167 }
+    ],
+    "stats": {
+        "agility": 582,
+        "attackPower": 1848,
+        "critRating": 167,
+        "hitRating": 292,
+        "expertise": 10
+    }
+}
