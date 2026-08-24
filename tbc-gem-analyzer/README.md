@@ -67,7 +67,10 @@ Useful options:
 | `--phase N` | auto | max gem content phase; auto-detected from the wowsims repo's current TBC Anniversary phase (phase 3+ unlocks Sunwell-tier epic gems like Rigid Lionseye) |
 | `--jc on\|off` | on | allow the unique epic Jewelcrafting gem |
 | `--rare-gems` | off | also consider rare-quality gems everywhere |
-| `--talents STR` | imported | override the talent string |
+| `--talents STR` | imported | override the talent string (your Murder/main build) |
+| `--talents-alt STR` | - | dual-spec build without Murder, auto-used vs Demons/Elementals/Undead/Mechanical (Murder only works vs Humanoid/Giant/Beast/Dragonkin) |
+| `--armor-debuff iea\|sunder` | iea | `iea` = you are the Improved Expose Armor rogue; `sunder` = warrior sunders |
+| `--no-demonslaying` | off | keep the flask on demon bosses instead of Elixir of Demonslaying + Major Fortitude |
 | `--apl FILE` | wowsims swords APL | override the rotation |
 | `--settings FILE` | - | JSON overriding consumables / raid buffs / debuffs |
 | `--boss-config FILE` | - | JSON overriding per-boss durations/armor |
@@ -89,6 +92,22 @@ duration with `--boss-config`:
 
 Fight gimmicks (add phases, target swaps, forced downtime) are not scripted;
 they affect all gem combos roughly equally, so rankings are unaffected.
+
+## Per-boss consumables / poison / build
+
+The sims automatically apply per-boss raid reality, and
+`python3 cheatsheet.py` prints the full table (also in `BOSS_CHEATSHEET.md`):
+
+- **Demon bosses**: Elixir of Demonslaying + Elixir of Major Fortitude replace
+  the flask (disable with `--no-demonslaying`).
+- **Poison-immune bosses** (Mechanical + Rage Winterchill by default;
+  override per boss with `--boss-config` key `poison_immune`): off-hand uses
+  Adamantite Sharpening Stone instead of Deadly Poison.
+- **Windfury main hand** always: the sim ignores MH imbues while a Windfury
+  Totem is up, exactly like in game.
+- **Dual spec**: pass `--talents-alt` with your non-Murder build and it is used
+  automatically on bosses where Murder does nothing.
+- Full consumes every pull: Haste Potion, Thistle Tea, Super Sapper Charge.
 
 ## Assumptions / defaults
 

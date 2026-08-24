@@ -73,7 +73,18 @@ def parse_args():
                    help="number of finalist combos simmed on every boss (default %(default)s)")
     p.add_argument("--jc", choices=["on", "off"], default="on",
                    help="allow the unique epic Jewelcrafting gem (default on)")
-    p.add_argument("--talents", default=None, help="override talent string")
+    p.add_argument("--talents", default=None,
+                   help="override talent string (your Murder/main build)")
+    p.add_argument("--talents-alt", default=None,
+                   help="second (dual-spec) talent string without Murder, used "
+                        "automatically vs Demons/Elementals/Undead/Mechanical "
+                        "bosses where Murder does nothing")
+    p.add_argument("--armor-debuff", choices=["sunder", "iea"], default="iea",
+                   help="armor debuff on the boss: 'iea' = you are the Improved "
+                        "Expose Armor rogue (default), 'sunder' = warrior sunders")
+    p.add_argument("--no-demonslaying", action="store_true",
+                   help="keep the flask on demon bosses instead of switching to "
+                        "Elixir of Demonslaying + Elixir of Major Fortitude")
     p.add_argument("--apl", default=None, help="override rotation APL json file")
     p.add_argument("--settings", default=None,
                    help="JSON overriding consumables/raidBuffs/partyBuffs/"
@@ -199,8 +210,17 @@ def main():
     print(f"\n{len(socketed)} items with {n_sockets} colored sockets to optimize")
 
     runner = SimRunner(args.sim_repo, gear, apl_path=args.apl,
-                       talents=args.talents, settings_path=args.settings)
+                       talents=args.talents, settings_path=args.settings,
+                       talents_alt=args.talents_alt,
+                       demonslaying=not args.no_demonslaying,
+                       armor_debuff=args.armor_debuff)
     print(f"Talents: {runner.talents}")
+    if runner.talents_alt:
+        print(f"Alt build (non-Murder bosses): {runner.talents_alt}")
+    print(f"Armor debuff: {'Improved Expose Armor' if args.armor_debuff == 'iea' else 'Sunder Armor'}"
+          f" | Demonslaying elixir on demons: {not args.no_demonslaying}"
+          f" | Windfury MH, Deadly Poison OH (Adamantite Sharpening Stone on "
+          f"poison-immune bosses)")
 
     # --- Stage 1: EP weights from delta sims on the reference target ---
     print(f"\nStage 1: measuring stat weights "
@@ -229,9 +249,25 @@ def main():
                              candidates, jc_candidates,
                              meta_socket_gem_matches=meta_gem is not None)
     current = current_combo_from_gear(gear, db)
+
+    # Deduplicate combos that are the same set of gems in different sockets
+    # (identical stats -> identical DPS); prefer the current gemming when tied.
+    def signature(c):
+        return (tuple(sorted(g for o in c.options for g in o.gems)),
+                tuple(sorted(o.item_slot for o in c.options if o.bonus_active)))
+
+    cur_sig = signature(current)
+    deduped, seen = [], set()
+    for c in combos:
+        sig = signature(c)
+        if sig == cur_sig or sig in seen:
+            continue
+        seen.add(sig)
+        deduped.append(c)
+    combos = deduped
     combos.append(current)
     current_index = len(combos) - 1
-    print(f"  {len(combos) - 1} hit brackets + current gems")
+    print(f"  {len(combos) - 1} distinct hit brackets + current gems")
     for c in combos[:-1]:
         jc_used = sum(o.jc for o in c.options)
         print(f"    {c.label:<16} EP {c.ep:7.1f}  colors r/y/b={c.counts}  "

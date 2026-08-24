@@ -34,7 +34,12 @@ class Boss:
     variation: int         # +/- seconds
     mob_type: str = MOB_HUMANOID
     armor: float = BOSS_ARMOR
+    poison_immune: bool = False   # switches OH to Adamantite Sharpening Stone
     notes: str = ""
+
+    def __post_init__(self):
+        if self.mob_type == MOB_MECHANICAL:
+            self.poison_immune = True
 
 
 BOSSES = [
@@ -55,7 +60,8 @@ BOSSES = [
     Boss("kaelthas", "Kael'thas Sunstrider", "TK", 360, 45, MOB_HUMANOID,
          notes="long fight; advisor/weapon phases not modeled"),
     # --- Mount Hyjal ---
-    Boss("winterchill", "Rage Winterchill", "Hyjal", 130, 20, MOB_UNDEAD),
+    Boss("winterchill", "Rage Winterchill", "Hyjal", 130, 20, MOB_UNDEAD,
+         poison_immune=True),
     Boss("anetheron", "Anetheron", "Hyjal", 150, 25, MOB_DEMON),
     Boss("kazrogal", "Kaz'rogal", "Hyjal", 130, 20, MOB_DEMON),
     Boss("azgalor", "Azgalor", "Hyjal", 160, 25, MOB_DEMON),
@@ -115,6 +121,10 @@ def apply_boss_config(path: str):
             b.variation = int(over["variation"])
         if "armor" in over:
             b.armor = float(over["armor"])
+        if "poison_immune" in over:
+            b.poison_immune = bool(over["poison_immune"])
+        if "mob_type" in over:
+            b.mob_type = f"MobType{over['mob_type'].capitalize()}"
 
 
 def encounter_json(boss: Boss) -> dict:
@@ -143,4 +153,6 @@ def encounter_json(boss: Boss) -> dict:
     }
 
 
-REFERENCE_BOSS = Boss("reference", "Reference Target", "-", 190, 30, MOB_DEMON)
+# Neutral target for EP-weight and screening sims (Humanoid so Murder counts
+# and no boss-specific consumable swaps kick in).
+REFERENCE_BOSS = Boss("reference", "Reference Target", "-", 190, 30, MOB_HUMANOID)

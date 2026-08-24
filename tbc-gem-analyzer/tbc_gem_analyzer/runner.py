@@ -13,13 +13,25 @@ from .importers import EquippedGear
 
 DEFAULT_TALENTS = "00532012502-023305200005015002321151"  # combat swords
 
+# Windfury main hand is assumed: the sim engine ignores any MH imbue while a
+# Windfury Totem party buff is active, so mhImbueId stays unset.
 DEFAULT_CONSUMABLES = {
-    "flaskId": 22854,       # Relentless Assault
+    "flaskId": 22854,       # Flask of Relentless Assault
     "foodId": 33872,        # Spicy Hot Talbuk
     "potId": 22838,         # Haste Potion
     "conjuredId": 7676,     # Thistle Tea
-    "ohImbueId": 27186,     # Deadly Poison (OH); MH imbue comes from the APL
+    "ohImbueId": 27186,     # Deadly Poison (OH)
+    "superSapper": True,    # Super Sapper Charge on cooldown
 }
+
+ELIXIR_OF_DEMONSLAYING = 9224     # battle elixir, +265 AP vs demons
+ELIXIR_OF_MAJOR_FORTITUDE = 32062  # guardian elixir paired with demonslaying
+ADAMANTITE_SHARPENING_STONE = 29453  # OH imbue for poison-immune bosses
+
+# Murder (+1%/point damage) only works against these mob types; when an
+# alternate (non-Murder) build is provided it is used for all other bosses.
+MURDER_MOB_TYPES = {"MobTypeHumanoid", "MobTypeGiant", "MobTypeBeast",
+                    "MobTypeDragonkin"}
 
 DEFAULT_PARTY_BUFFS = {
     "battleShout": "TristateEffectImproved",
@@ -72,7 +84,9 @@ class SimError(Exception):
 
 class SimRunner:
     def __init__(self, sim_repo: str, gear: EquippedGear, apl_path: str | None = None,
-                 talents: str | None = None, settings_path: str | None = None):
+                 talents: str | None = None, settings_path: str | None = None,
+                 talents_alt: str | None = None, demonslaying: bool = True,
+                 armor_debuff: str = "sunder"):
         self.cli = os.path.join(sim_repo, "wowsimcli-bin")
         if not os.path.exists(self.cli):
             raise SimError(
@@ -84,6 +98,8 @@ class SimRunner:
             self.apl = json.load(f)
         self.gear = gear
         self.talents = talents or gear.talents or DEFAULT_TALENTS
+        self.talents_alt = talents_alt  # used on non-Murder mob types if set
+        self.demonslaying = demonslaying
 
         overrides = {}
         if settings_path:
@@ -95,9 +111,28 @@ class SimRunner:
         self.individual_buffs = {**DEFAULT_INDIVIDUAL_BUFFS,
                                  **overrides.get("individualBuffs", {})}
         self.debuffs = {**DEFAULT_DEBUFFS, **overrides.get("debuffs", {})}
+        if armor_debuff == "iea":
+            # You are the Improved Expose Armor rogue: IEA replaces Sunder.
+            self.debuffs.pop("sunderArmor", None)
+            self.debuffs["exposeArmor"] = "TristateEffectImproved"
 
         profs = [PROFESSION_NAMES.get(p.lower()) for p in gear.professions]
         self.professions = [p for p in profs if p][:2]
+
+    def consumables_for_boss(self, boss: Boss) -> dict:
+        cons = dict(self.consumables)
+        if self.demonslaying and boss.mob_type == "MobTypeDemon":
+            cons.pop("flaskId", None)
+            cons["battleElixirId"] = ELIXIR_OF_DEMONSLAYING
+            cons["guardianElixirId"] = ELIXIR_OF_MAJOR_FORTITUDE
+        if boss.poison_immune:
+            cons["ohImbueId"] = ADAMANTITE_SHARPENING_STONE
+        return cons
+
+    def talents_for_boss(self, boss: Boss) -> str:
+        if self.talents_alt and boss.mob_type not in MURDER_MOB_TYPES:
+            return self.talents_alt
+        return self.talents
 
     def build_request(self, equipment_json: dict, boss: Boss, iterations: int,
                       seed: int = 20260824, bonus_stats: list | None = None) -> dict:
@@ -106,10 +141,10 @@ class SimRunner:
             "race": self.gear.race,
             "class": "ClassRogue",
             "equipment": equipment_json,
-            "consumables": self.consumables,
+            "consumables": self.consumables_for_boss(boss),
             "buffs": self.individual_buffs,
             "rogue": {"options": {"classOptions": {}}},
-            "talentsString": self.talents,
+            "talentsString": self.talents_for_boss(boss),
             "rotation": self.apl,
             "reactionTimeMs": 100,
             "distanceFromTarget": 5,
