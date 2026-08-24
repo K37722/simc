@@ -62,8 +62,9 @@ def parse_args():
                         "default: all four raids")
     p.add_argument("--boss-config", default=None,
                    help="JSON file overriding per-boss durations/armor")
-    p.add_argument("--phase", type=int, default=3,
-                   help="max content phase for candidate gems (default 3 = Hyjal/BT)")
+    p.add_argument("--phase", type=int, default=None,
+                   help="max content phase for candidate gems (default: the current "
+                        "TBC Anniversary phase, auto-detected from the wowsims repo)")
     p.add_argument("--iterations", type=int, default=4000,
                    help="iterations per final boss sim (default %(default)s)")
     p.add_argument("--screen-iterations", type=int, default=2500,
@@ -120,9 +121,27 @@ def current_combo_from_gear(gear, db) -> GemCombo:
     return GemCombo(label="current gems", options=options)
 
 
+def detect_current_phase(sim_repo: str) -> int:
+    """Read CURRENT_PHASE from the wowsims UI constants (fallback: phase 2)."""
+    import re
+    path = os.path.join(sim_repo, "ui", "core", "constants", "other.ts")
+    try:
+        with open(path) as f:
+            m = re.search(r"CURRENT_PHASE\s*:\s*Phase\s*=\s*Phase\.Phase(\d+)", f.read())
+        if m:
+            return int(m.group(1))
+    except OSError:
+        pass
+    return 2
+
+
 def main():
     args = parse_args()
     db = Database(args.sim_repo)
+    if args.phase is None:
+        args.phase = detect_current_phase(args.sim_repo)
+        print(f"Gem pool: phase <= {args.phase} (current TBC Anniversary phase; "
+              f"override with --phase)")
     if args.boss_config:
         apply_boss_config(args.boss_config)
     bosses = select_bosses(args.bosses)

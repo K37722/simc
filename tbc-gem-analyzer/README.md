@@ -64,7 +64,7 @@ Useful options:
 | `--bosses LIST` | all | comma-separated raids (`SSC,TK,Hyjal,BT`) and/or boss keys (`vashj`, `illidan`, ...) |
 | `--iterations N` | 4000 | iterations per final boss sim |
 | `--top K` | 8 | finalist combos simmed on every boss |
-| `--phase N` | 3 | max gem content phase (3 = Hyjal/BT epic gems) |
+| `--phase N` | auto | max gem content phase; auto-detected from the wowsims repo's current TBC Anniversary phase (phase 3+ unlocks Sunwell-tier epic gems like Rigid Lionseye) |
 | `--jc on\|off` | on | allow the unique epic Jewelcrafting gem |
 | `--rare-gems` | off | also consider rare-quality gems everywhere |
 | `--talents STR` | imported | override the talent string |
