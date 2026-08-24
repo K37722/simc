@@ -78,7 +78,11 @@ def parse_args():
     p.add_argument("--talents-alt", default=None,
                    help="second (dual-spec) talent string without Murder, used "
                         "automatically vs Demons/Elementals/Undead/Mechanical "
-                        "bosses where Murder does nothing")
+                        "bosses where Murder does nothing; if omitted it is "
+                        "auto-derived by moving the Murder points into flex "
+                        "talents (Imp Eviscerate > Vile Poisons > Imp Poisons)")
+    p.add_argument("--no-talents-alt", action="store_true",
+                   help="use the same (Murder) build on every boss")
     p.add_argument("--armor-debuff", choices=["sunder", "iea"], default="iea",
                    help="armor debuff on the boss: 'iea' = you are the Improved "
                         "Expose Armor rogue (default), 'sunder' = warrior sunders")
@@ -209,9 +213,14 @@ def main():
     n_sockets = sum(len(i.colored_socket_indices) for _, i in socketed)
     print(f"\n{len(socketed)} items with {n_sockets} colored sockets to optimize")
 
+    talents_alt = args.talents_alt
+    if talents_alt is None and not args.no_talents_alt:
+        from tbc_gem_analyzer.talents import derive_no_murder_build
+        talents_alt = derive_no_murder_build(
+            args.talents or gear.talents or "", args.sim_repo)
     runner = SimRunner(args.sim_repo, gear, apl_path=args.apl,
                        talents=args.talents, settings_path=args.settings,
-                       talents_alt=args.talents_alt,
+                       talents_alt=None if args.no_talents_alt else talents_alt,
                        demonslaying=not args.no_demonslaying,
                        armor_debuff=args.armor_debuff)
     print(f"Talents: {runner.talents}")

@@ -2,7 +2,7 @@
 
 Every boss: Windfury main hand (no MH imbue), Spicy Hot Talbuk, Haste Potion, Thistle Tea, Super Sapper Charge, Glyph/armor consumables as usual.
 
-Build A = your Murder spec (Murder works vs Humanoid / Giant / Beast / Dragonkin). Build B = your dual-spec without Murder (Demons, Elementals, Undead, Mechanical).
+Build A = your Murder spec (Murder works vs Humanoid / Giant / Beast / Dragonkin). Build B = your dual-spec without Murder (Demons, Elementals, Undead, Mechanical) - put the freed Murder points into **Vile Poisons** (simmed best flex with the swords rotation; Improved Poisons is ~2 dps behind, Improved Eviscerate is worth nothing since Eviscerate is not in the rotation; on poison-immune bosses the flex choice does not matter).
 
 | Boss | Raid | Type | Build | Battle elixir / flask | Off-hand |
 |---|---|---|---|---|---|

@@ -50,7 +50,11 @@ def main():
              CONSTANT_LINE, "",
              "Build A = your Murder spec (Murder works vs Humanoid / Giant / "
              "Beast / Dragonkin). Build B = your dual-spec without Murder "
-             "(Demons, Elementals, Undead, Mechanical).", "",
+             "(Demons, Elementals, Undead, Mechanical) - put the freed Murder "
+             "points into **Vile Poisons** (simmed best flex with the swords "
+             "rotation; Improved Poisons is ~2 dps behind, Improved Eviscerate "
+             "is worth nothing since Eviscerate is not in the rotation; on "
+             "poison-immune bosses the flex choice does not matter).", "",
              header, sep]
     for r in rows(BOSSES):
         lines.append(f"| {r['boss']} | {r['raid']} | {r['type']} | {r['build']} "
